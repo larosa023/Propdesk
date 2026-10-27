@@ -327,7 +327,7 @@ const OA={NBA:"basketball_nba",WNBA:"basketball_wnba",NFL:"americanfootball_nfl"
 const OAMB={player_points:"Points",player_rebounds:"Rebounds",player_assists:"Assists",player_threes:"3-pointers made"},OAMF={player_pass_yds:"Passing yards",player_rush_yds:"Rushing yards",player_reception_yds:"Receiving yards",player_receptions:"Receptions"};
 const OAM={NBA:OAMB,WNBA:OAMB,NCAAMB:OAMB,NCAAWB:OAMB,NFL:OAMF,NCAAF:OAMF,MLB:{pitcher_strikeouts:"Strikeouts",batter_hits:"Hits",batter_home_runs:"Home runs",batter_rbis:"RBIs"}};
 const OAB={draftkings:"DK",fanduel:"FD",betmgm:"MGM",hardrockbet:"HR",espnbet:"TS",fanatics:"FAN",prizepicks:"PP"};
-let oaKey="",oaRem=null,oaBusy=false;const oaEv={};
+let oaKey="",oaRem=null,oaBusy=false;const oaEv={},oaDone=new Set();
 try{oaKey=localStorage.getItem("pd.oakey")||"";oaRem=localStorage.getItem("pd.oarem")}catch(e){}
 const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\b(jr|sr|ii|iii|iv)\b/g,"").replace(/\s+/g," ").trim();
 const oaGames=()=>gOf().filter(g=>sel=="all"||g.id==sel);
@@ -337,7 +337,7 @@ if(!OA[L])s+='<div class="nt">Live odds aren’t available for this league.</div
 else if(oaKey)s+=`<button class="go" id="oal" ${oaBusy||!gs.length?"disabled":""}>${oaBusy?"Loading odds…":gs.length?(sel=="all"?`Load odds for ${gs.length} game${gs.length>1?"s":""}`:"Load odds for this game"):"No games on this date"}<small>${gs.length?`Up to ${c} credits · saved prices reload free for 30 min`:""}${oaRem!=null?` · ${oaRem} credits left`:""}</small></button>`;
 s+=`<div class="kr"><input id="oakey" type="password" autocomplete="off" placeholder="${oaKey?"Key saved · paste a new one to replace":"Paste your The Odds API key"}" aria-label="The Odds API key"><button class="chip on" id="oaks">${oaKey?"Update":"Save"}</button></div>`;
 s+=`<div class="nt">${oaKey?'Your key stays in this browser. <a href="#" id="oakx">Remove key</a>':'Get a free key at <a href="https://the-odds-api.com" target="_blank" rel="noopener">the-odds-api.com</a>. It stays in this browser.'}</div></div>`;return s}
-function oaWire(){const k=$("oaks");if(!k)return;k.onclick=e=>{e.stopPropagation();const v=$("oakey").value.trim();if(!v){toast("Paste your key first");return}oaKey=v;try{localStorage.setItem("pd.oakey",v)}catch(x){}toast("Odds key saved");bkUI()};
+function oaWire(){const k=$("oaks");if(!k)return;k.onclick=e=>{e.stopPropagation();const v=$("oakey").value.trim();if(!v){toast("Paste your key first");return}oaKey=v;try{localStorage.setItem("pd.oakey",v)}catch(x){}toast("Odds key saved · loading odds…");bkUI();oaLoad(oaGames(),false)};
 const x=$("oakx");if(x)x.onclick=e=>{e.preventDefault();e.stopPropagation();oaKey="";oaRem=null;try{localStorage.removeItem("pd.oakey");localStorage.removeItem("pd.oarem")}catch(y){}toast("Key removed");bkUI()};
 const l=$("oal");if(l)l.onclick=e=>{e.stopPropagation();oaLoad(oaGames(),false)}}
 async function oaGet(path){const u=`https://api.the-odds-api.com/v4/${path}${path.includes("?")?"&":"?"}apiKey=${encodeURIComponent(oaKey)}`;let r;
@@ -360,7 +360,7 @@ try{let ev=oaEv[sp];if(!ev||Date.now()-ev.t>6e5){ev=oaEv[sp]={t:Date.now(),list:
 for(const g of gs){const e=oaMatch(g,ev.list);if(!e){miss++;continue}const ck="pd.oa."+e.id+"|"+mks;let d=null;
 try{const c=JSON.parse(localStorage.getItem(ck)||"null");if(c&&Date.now()-c.t<18e5)d=c.d}catch(x){}
 if(!d){if(cacheOnly)continue;const j=await oaGet(`sports/${sp}/events/${e.id}/odds?bookmakers=${Object.keys(OAB).join(",")}&markets=${mks}&oddsFormat=american`);d=j.bookmakers||[];try{localStorage.setItem(ck,JSON.stringify({t:Date.now(),d}))}catch(x){}}
-got++;n+=oaApply(g,d,mk)}
+got++;oaDone.add(g.id);n+=oaApply(g,d,mk)}
 if(!cacheOnly)toast(n?`Loaded ${n} sportsbook prices${miss?` · ${miss} game${miss>1?"s":""} not listed yet`:""}`:miss&&!got?"The odds service hasn’t listed these games yet. Started and finished games drop off.":"No player props are posted for these games yet")}
 catch(e){if(!cacheOnly)toast("Couldn’t load odds: "+e.message)}
 oaBusy=false;if(n)try{pump()}catch(x){}allRefresh()}
@@ -374,7 +374,7 @@ const opts=[["","As listed","Original lines, or best live price"],["BEST","Best 
 $("bkm").innerHTML='<div class="hd">Sportsbook</div>'+opts.map(o=>`<button class="bo ${o[0]==selBook?"on":""}" role="option" data-k="${o[0]}">${blogo(o[0])}<span>${o[1]}<small>${o[2]}</small></span>${o[0]==selBook?'<span class="ck">✓</span>':""}</button>`).join("")+oaPanel();oaWire();
 $("bkm").querySelectorAll(".bo[data-k]").forEach(b=>b.onclick=()=>{setBook(b.dataset.k);$("bkm").hidden=true;$("bkb").setAttribute("aria-expanded","false")});
 const n=cpName();$("cp").textContent="Copy slip & open "+n+" ↗";$("cpm").textContent=`Copies your legs and opens ${n} in a new tab. Sportsbooks don’t let outside sites add picks to their slip, so paste or re-create each leg there.`}
-function setBook(v){selBook=v;$("fbk").value=v;pgN=0;allRefresh();bkUI();toast(v?(v=="BEST"?"Showing best price per prop":BKN[v]+" lines & odds"):"Showing listed lines")}
+function setBook(v){selBook=v;if(v&&oaKey&&!oaBusy){const need=oaGames().filter(g=>!oaDone.has(g.id));if(need.length)setTimeout(()=>oaLoad(need,false),0)}$("fbk").value=v;pgN=0;allRefresh();bkUI();toast(v?(v=="BEST"?"Showing best price per prop":BKN[v]+" lines & odds"):"Showing listed lines")}
 $("bkb").onclick=e=>{e.stopPropagation();const m=$("bkm");m.hidden=!m.hidden;$("bkb").setAttribute("aria-expanded",String(!m.hidden));if(!m.hidden)fitBkm()};
 function fitBkm(){const m=$("bkm");m.style.right="";m.style.width="";const g=12,vw=document.documentElement.clientWidth;if(m.offsetWidth>vw-2*g)m.style.width=(vw-2*g)+"px";const r=m.getBoundingClientRect();if(r.left<g)m.style.right=(r.left-g)+"px";else if(r.right>vw-g)m.style.right=(r.right-(vw-g))+"px"}
 addEventListener("resize",()=>{if(!$("bkm").hidden)fitBkm()});
