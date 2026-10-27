@@ -2,7 +2,7 @@
 
 PropDesk is a single-page tool for researching player props. It puts each prop line next to the player's recent game logs, so you can see how often the player has gone over or under that number before you bet it.
 
-It is one HTML file with no build step and no install.
+**Use it here: [propdeskbet.netlify.app](https://propdeskbet.netlify.app)**. Nothing to download or install.
 
 ## What it does
 
@@ -20,8 +20,7 @@ NBA, WNBA, NFL, MLB, college football, and men's and women's college basketball.
 
 ## How to use it
 
-1. Download `index.html`.
-2. Open it in a browser (Chrome, Edge, Firefox or Safari).
+Open [propdeskbet.netlify.app](https://propdeskbet.netlify.app) in any browser, on desktop or phone.
 
 When the page can reach ESPN's public API, it pulls live schedules, rosters, game logs and headshots. Recent game logs are cached in your browser so they load faster the next time. If the API can't be reached, the page falls back to the snapshot of data built into the file.
 
