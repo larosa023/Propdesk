@@ -297,9 +297,9 @@ const gOf=()=>G.filter(g=>(g.lg||"NBA")==lg&&(g.d||SNAPD)==selDate),pOf=p=>(p.lg
 const emptyMsg=()=>liveOK===null?"Loading games…":liveOK===false?"No games stored for this date. Live schedules work in the downloaded file; this hosted page only has a snapshot.":"No "+lg+" games on this date.";
 function games(){setVG();const gs=gOf();$("games").innerHTML=gs.length?`<button class="game ${sel=="all"?"on":""}" data-g="all"><div class="t">All games</div><div class="m">${gs.length} game${gs.length==1?"":"s"}</div></button>`+gs.map(g=>`<button class="game ${sel==g.id?"on":""}" data-g="${g.id}"><div class="t"><span>${tn(g.a)} @ ${tn(g.h)}</span><span class="sub">${g.t}</span></div><div class="m">${g.sp} · O/U ${g.tot}</div><div class="m">${g.ml}</div><div class="m cd" data-iso="${ISO[g.id]||""}" data-st="${g.st||""}" data-dt="${g.dt||""}"></div>${g.p?`<div class="bar"><i style="width:${100-g.p}%;background:${T[g.a][0]}"></i><i style="width:${g.p}%;background:${T[g.h][0]}"></i></div>`:""}</button>`).join(""):"";
 document.querySelectorAll(".game").forEach(b=>b.onclick=()=>{sel=b.dataset.g;games();props();proj();rost();if(typeof prio=="function"){prio();pump()}});tick()}
-let mk="All";
-function chips(){setVG();const ms=["All",...new Set(P.filter(p=>!p.hid&&pOf(p)).map(p=>p.m))];$("chips").innerHTML=ms.map(m=>`<button class="chip ${m==mk?"on":""}">${m}</button>`).join("");$("chips").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{mk=c.textContent;chips();props()})}
-function props(){try{applyAll()}catch(e){}setVG();const L=P.map((p,i)=>({...p,i})).filter(p=>!p.hid&&pOf(p)&&(sel=="all"||p.g==sel)&&(mk=="All"||p.m==mk));$("ph").textContent=`Props · ${L.length}`;const fbOn=$("sch").style.display!="none";
+let mk="All",mks=new Set();const setMks=a=>{mks=new Set(a);mk=mks.size?"sel":"All"};
+function chips(){setVG();const ms=["All",...new Set(P.filter(p=>!p.hid&&pOf(p)).map(p=>p.m))];[...mks].forEach(m=>{if(!ms.includes(m))mks.delete(m)});mk=mks.size?"sel":"All";$("chips").innerHTML=ms.map(m=>{const on=m=="All"?!mks.size:mks.has(m);return `<button class="chip ${on?"on":""}" aria-pressed="${on}">${m}</button>`}).join("");$("chips").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{const m=c.textContent;if(m=="All")setMks([]);else{const s=new Set(mks);s.has(m)?s.delete(m):s.add(m);setMks(s)}pgN=0;chips();props()})}
+function props(){try{applyAll()}catch(e){}setVG();const L=P.map((p,i)=>({...p,i})).filter(p=>!p.hid&&pOf(p)&&(sel=="all"||p.g==sel)&&(mk=="All"||mks.has(p.m)));$("ph").textContent=`Props · ${L.length}`;const fbOn=$("sch").style.display!="none";
 if(view=="table"&&!fbOn){$("props").style.display="none";$("tw").style.display="";$("pgr").style.display="";renderTable(L);return}
 $("props").style.display=fbOn?"none":"";$("tw").style.display="none";$("pgr").style.display="none";
 $("props").innerHTML=L.map((p,k)=>`<div class="card ${slip.includes(p.i)?"in":""}" data-c="${p.i}" style="animation-delay:${Math.min(k,12)*40}ms"><div class="top"><button class="star cs ${slip.includes(p.i)?"on":""}" data-cs="${p.i}" title="${slip.includes(p.i)?"Remove from slip":"Add to slip"}" aria-label="${slip.includes(p.i)?"Remove from slip":"Add to slip"}">${slip.includes(p.i)?"★":"☆"}</button>${av(p.n,p.tm)}<div><div class="nm">${p.n}</div><div class="sub">${T[p.tm][1]} · ${p.pos}</div></div><span class="tag">${p._noodds?"No price":fo(p.o)}</span></div>
@@ -551,7 +551,7 @@ $("fhr").onchange=e=>{flt.hr=+e.target.value;pgN=0;props()};$("fmod").onchange=e
 $("fsort").onchange=e=>{const a=e.target.value.split(":");sortK=a[0];sortD=+a[1];pgN=0;props()};
 $("fview").onclick=()=>{view=view=="table"?"cards":"table";$("fview").textContent=view=="table"?"Cards":"Table";props()};
 $("fempty").onclick=()=>{showEmpty=!showEmpty;pgN=0;props()};
-$("frst").onclick=()=>{selBook="";$("fbk").value="";applyAll();bkUI();Object.assign(flt,{q:"",tm:"",omin:"",omax:"",hr:0,mod:"listed"});sortK="l10";sortD=-1;pgN=0;["fq","fmin","fmax"].forEach(i=>$(i).value="");$("fhr").value="0";$("fmod").value="listed";syncSort();mk="All";chips();props()};
+$("frst").onclick=()=>{selBook="";$("fbk").value="";applyAll();bkUI();Object.assign(flt,{q:"",tm:"",omin:"",omax:"",hr:0,mod:"listed"});sortK="l10";sortD=-1;pgN=0;["fq","fmin","fmax"].forEach(i=>$(i).value="");$("fhr").value="0";$("fmod").value="listed";syncSort();setMks([]);chips();props()};
 /* ===== LIVE DATA + CALENDAR ===== */
 const ESP={NBA:["basketball","nba",""],WNBA:["basketball","wnba",""],NFL:["football","nfl",""],MLB:["baseball","mlb",""],NCAAF:["football","college-football","&groups=80"],NCAAMB:["basketball","mens-college-basketball","&groups=50"],NCAAWB:["basketball","womens-college-basketball","&groups=50"]};
 const BBALL=["NBA","WNBA","NCAAMB","NCAAWB"];
@@ -596,7 +596,7 @@ async function go(fresh){const tok=++goTok,L=lg,d=selDate;sel="all";paint();
 if(liveOK!==false){try{const evs=await loadDay(L,d,fresh);if(tok!=goTok)return;syncDay(L,d,evs);liveOK=true;liveNote="";liveAt=new Date();liveDays.add(L+"|"+d);paint();
 await Promise.all(gOf().filter(g=>g.tid).flatMap(g=>[g.a,g.h].map(k=>loadRoster(L,k,g.tid[k]).catch(()=>{}))));if(tok!=goTok)return;
 gOf().forEach(mkProps);gOf().forEach(g=>[g.a,g.h].forEach(k=>(RO[k]||[]).forEach(pl=>{if(BBALL.includes(L)){if(GL[pl.n]||GLW[pl.n])fillLines(pl.n);else if(!logQ.some(q=>q.n==pl.n))logQ.push({n:pl.n,id:pl.id,L,g:g.id})}})));
-mk=defMk();paint();prio();pump();oaLoad(gOf(),true)}
+{const dm=defMk();setMks(dm=="All"?[]:[dm])}paint();prio();pump();oaLoad(gOf(),true)}
 catch(e){if(tok!=goTok)return;if(liveOK===null){liveOK=false}liveNote=(e&&e.message)||"request failed";paint()}}if(liveOK!==true&&tok==goTok)oaLoad(gOf(),true)}
 async function refreshScores(){if(liveOK!==true||document.hidden||selDate!=ymd(new Date()))return;try{const evs=await loadDay(lg,selDate,true);syncDay(lg,selDate,evs);liveAt=new Date();games();dpUI()}catch(e){}}
 setInterval(refreshScores,60000);
