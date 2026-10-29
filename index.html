@@ -200,6 +200,18 @@ h2{font-size:12px;letter-spacing:.09em;margin:20px 0 10px}
 .nwi{display:flex;flex-direction:column;gap:2px;padding:7px 10px;font-size:12.5px;line-height:1.45}
 .nwi b{font-size:13px;color:var(--tx)}.nwi span{color:var(--mu)}
 @media(max-width:700px){.topbar .nww{order:4}.topbar .thw{order:5}.nwm{width:calc(100vw - 24px)}}
+
+.pt th{position:sticky}
+.cmb{display:inline-grid;place-items:center;width:16px;height:16px;margin-left:4px;border-radius:5px;border:1px solid transparent;background:none;color:var(--mu);font-size:12px;line-height:1;padding:0;vertical-align:middle;opacity:.45;transition:opacity .15s}
+.pt th:hover .cmb,.cmb:focus-visible{opacity:1;border-color:var(--bd)}
+.cmb:hover{color:var(--ac);border-color:var(--ac)!important}
+.cmb:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.pt th.mn{width:26px;max-width:26px;padding:10px 2px;font-size:0;color:transparent}
+.pt th.mn .cmb{font-size:13px;opacity:1;margin:0;color:var(--mu);border-color:var(--bd)}
+.pt td.mn{width:26px;max-width:26px;padding:5px 2px;font-size:0;color:transparent}
+.pt td.mn>*{display:none}
+.pt td.mn>.h{display:block;width:8px;height:28px;margin:0 auto;padding:0;font-size:0;border-radius:4px}
+@media(hover:none){.cmb{opacity:.7}}
 </style></head><body><div class="wrap"><div class="grid">
 <aside class="slip side"><div class="logo">Prop<b>Desk</b></div><div class="pb">Pick Builder</div><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Parlay slip</b><span style="display:flex;gap:6px;align-items:center"><button class="chip" id="slipx" hidden>Clear all</button><span class="pill" id="cnt">0 legs</span></span></div>
 <div id="legs"><div class="empty">Add props to build a parlay.</div></div>
@@ -348,7 +360,7 @@ document.addEventListener("click",e=>{if(!e.target.closest(".thw"))$("thm").hidd
 thUI();
 /* ===== What's new ===== */
 const UPD=[
-["Oct 29",[["Pick several prop types","Tap Points, Rebounds, Blocks and more to show them together. Tap one again to remove it, or tap All to see everything."],["Cleaner layout","Slimmer top bar, smaller player icons and hit-rate boxes. On phones the player column stays put when you swipe the table."],["Filters button","Team, odds range, hit rate, side and empty rows now sit behind Filters, with a count of how many are on."],["Theme menu","Pick Midnight, Daylight, Graphite, Turf, Sunset or Slate, or match your device. Your pick is saved."],["What’s new","This list of updates."]]],
+["Oct 29",[["Minimize table columns","Tap the – next to any column name to shrink it to a thin strip. Hit-rate columns keep their colors. Tap + to bring it back."],["Pick several prop types","Tap Points, Rebounds, Blocks and more to show them together. Tap one again to remove it, or tap All to see everything."],["Cleaner layout","Slimmer top bar, smaller player icons and hit-rate boxes. On phones the player column stays put when you swipe the table."],["Filters button","Team, odds range, hit rate, side and empty rows now sit behind Filters, with a count of how many are on."],["Theme menu","Pick Midnight, Daylight, Graphite, Turf, Sunset or Slate, or match your device. Your pick is saved."],["What’s new","This list of updates."]]],
 ["Oct 28",[["Clear all","Empty the parlay slip in one tap."],["In-game odds","During live games, Refresh live odds in the sportsbook menu pulls current prices."]]],
 ["Oct 27",[["FG and 3PT attempted props","Hit rates and lines from each player’s game logs. Books don’t post odds for these, so type in your own."],["Live sportsbook odds","Lines and prices from DraftKings, FanDuel, BetMGM, Hard Rock Bet, theScore Bet and PrizePicks, plus Best price. Add your odds key in the sportsbook menu."],["Odds load on their own","Saving your key or picking a book loads odds automatically."],["No more fake -110","Props without a real price now show a dash."],["Shorter snapshot note","One line at the top, with the full details on tap."],["Phone fixes","The sportsbook menu stays fully on screen."],["Tab icon","PropDesk has its own icon in the browser tab."]]]];
 const updKey=UPD[0][0]+"|"+UPD[0][1].length+"|"+UPD[0][1][0][0];
@@ -540,6 +552,17 @@ return Object.assign(r,{ok:true,ov,line,l5:pc(s.v.slice(0,5)),l10:pc(a10),l15:pc
 function togSlip(i,ov){const had=slip.includes(i);if(!had&&ov!=null)P[i].s=ov?"Over":"Under";had?slip=slip.filter(x=>x!=i):slip.push(i);props();render();toast(had?"Removed from slip":"Added to slip · "+P[i].n);if(slip.length&&slip.reduce((a,j)=>a*dec(P[j].o),1)*(+$("stake").value||0)>=100)setTimeout(()=>toast("🎯 Parlay clears $100"),1100)}
 function plState(p){try{if(logFail.has(p.n))return "failed to load";if(logBusy.has(p.n)||logQ.some(q=>q.n==p.n))return "loading…";if(GL[p.n]||GLW[p.n])return "too few games";return "no games logged"}catch(e){return "no line"}}
 function logDiag(){try{const live=[...new Set(P.filter(x=>x.live).map(x=>x.n))];if(!live.length)return "";const ok=live.filter(n=>GL[n]||GLW[n]).length,pend=live.filter(n=>logBusy.has(n)||logQ.some(q=>q.n==n)).length,fl=live.filter(n=>logFail.has(n)).length;return ` · logs: ${ok}/${live.length} loaded${pend?`, ${pend} loading`:""}${fl?`, ${fl} failed`:""}${live.length-ok-pend-fl?`, ${live.length-ok-pend-fl} no games`:""}`}catch(e){return ""}}
+
+/* ===== minimize table columns ===== */
+const COLS=[["line","Line"],["odds","Odds"],["ip","IP"],["avg","Avg L10"],["diff","Diff"],["l5","L5"],["l10","L10"],["l15","L15"],["h2h","H2H"],["strk","Streak"],["szn","Season"]];
+let miniCols=new Set();try{miniCols=new Set(JSON.parse(localStorage.getItem("pd.cols")||"[]"))}catch(e){}
+const saveMini=()=>{try{localStorage.setItem("pd.cols",JSON.stringify([...miniCols]))}catch(e){}};
+function colMini(){const t=document.querySelector("#tw .pt");if(!t)return;const ths=t.querySelectorAll("thead th");
+ths.forEach((th,i)=>{if(!i)return;const c=COLS[i-1];if(!c)return;const mn=miniCols.has(c[0]);th.classList.toggle("mn",mn);
+const b=document.createElement("button");b.className="cmb";b.type="button";b.textContent=mn?"+":"–";b.title=(mn?"Show ":"Minimize ")+c[1];b.setAttribute("aria-label",b.title);
+b.onclick=e=>{e.stopPropagation();mn?miniCols.delete(c[0]):miniCols.add(c[0]);saveMini();props()};th.appendChild(b)});
+if(!miniCols.size)return;const idx=COLS.map((c,i)=>miniCols.has(c[0])?i+1:-1).filter(i=>i>0);
+t.querySelectorAll("tbody tr").forEach(tr=>{const td=tr.children;idx.forEach(i=>{if(td[i])td[i].classList.add("mn")})})}
 function renderTable(L0){const tw=$("tw");const L=L0;let R=L.map(rowOf);
 const tms=[...new Set(L.map(p=>p.tm))];$("ftm").innerHTML='<option value="">All teams</option>'+tms.map(t=>`<option value="${t}" ${flt.tm==t?"selected":""}>${T[t][1]}</option>`).join("");
 const q=flt.q.trim().toLowerCase();
@@ -562,7 +585,8 @@ return `<tr class="r" data-i="${p.i}"><td><div class="pc"><button class="star ${
 <td><div class="h" style="${heat(r.h2h)}">${r.h2h==null?"—":pct(r.h2h)+`<small>${r.hn}/${r.ht}</small>`}</div></td>
 <td>${r.ok?`<b>${r.strk}</b>`:"—"}</td><td><div class="h" style="${heat(r.szn)}">${pct(r.szn)}</div></td>
 </tr>`}).join("")+"</tbody></table>";
-$("pgr").innerHTML=`<button class="chip" id="pgp" ${pgN?"":"disabled"}>‹</button><span class="sub">Page ${pgN+1} / ${pages}</span><button class="chip" id="pgn" ${pgN<pages-1?"":"disabled"}>›</button><select id="pper" aria-label="Rows per page">${[20,50,100,250].map(n=>`<option ${n==per?"selected":""} value="${n}">Rows ${n}</option>`).join("")}</select>`;
+colMini();
+$("pgr").innerHTML=`<button class="chip" id="pgp" ${pgN?"":"disabled"}>‹</button><span class="sub">Page ${pgN+1} / ${pages}</span><button class="chip" id="pgn" ${pgN<pages-1?"":"disabled"}>›</button><select id="pper" aria-label="Rows per page">${[20,50,100,250].map(n=>`<option ${n==per?"selected":""} value="${n}">Rows ${n}</option>`).join("")}</select>${miniCols.size?`<button class="chip" id="pcols">Show all columns (${miniCols.size} minimized)</button>`:""}`;if($("pcols"))$("pcols").onclick=()=>{miniCols.clear();saveMini();props()};
 $("pgp").onclick=()=>{pgN--;props()};$("pgn").onclick=()=>{pgN++;props()};$("pper").onchange=e=>{per=+e.target.value;pgN=0;props()};
 tw.querySelectorAll("th.s").forEach(h=>h.onclick=()=>{const k=h.dataset.s;if(sortK==k)sortD=-sortD;else{sortK=k;sortD=k=="name"?1:-1}pgN=0;syncSort();props()});
 tw.querySelectorAll("tr.r").forEach(tr=>tr.onclick=()=>{const i=+tr.dataset.i,r=rows.find(x=>x.p.i==i);openP(i);if(r&&r.ok&&r.ov!=(P[i].s=="Over")){M.s=r.ov?"Over":"Under";mdl()}});
